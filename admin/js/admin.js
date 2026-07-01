@@ -14,6 +14,7 @@ let regFields = [];
 let fbQuestions = [];
 let attachments = [];
 let adminSearchText = "";
+let unsubscribe = null;
 
 const defaultFb = [
   "本次活動內容對我有幫助。",
@@ -154,13 +155,13 @@ $("addAttachmentBtn").onclick = () => {
   attachments.push({name:"附件", url:""});
   renderAttachments();
 };
-$("closeModalBtn").onclick = () => $("modal").classList.add("hidden");
+const closeModalBtn = $("closeModalBtn");
+if(closeModalBtn) closeModalBtn.onclick = () => $("modal")?.classList.add("hidden");
 $("adminSearch").oninput = (e) => {
   adminSearchText = e.target.value.trim();
   renderLists();
 };
 
-let unsubscribe = null;
 function listenActivities(){
   if(unsubscribe) return;
   unsubscribe = onSnapshot(query(collection(db, "activities"), orderBy("date", "desc")), (snap) => {
