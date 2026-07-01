@@ -1,5 +1,5 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyDirdWAzIKcrcLSdH8h1cmVgjQDRQK62hg",
+  apiKey: "AIzaSyDjrdWAzIKcrClSdH8hlcmVgjQDR0K62hg",
   authDomain: "must-activity-form.firebaseapp.com",
   projectId: "must-activity-form",
   storageBucket: "must-activity-form.firebasestorage.app",
