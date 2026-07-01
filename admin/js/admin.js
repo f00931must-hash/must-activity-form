@@ -99,6 +99,11 @@ function renderAdmins(){
 }
 
 document.addEventListener("click", async (e) => {
+  if(e.target.closest("[data-modal-close]") || e.target.id === "modal"){
+    const modal = $("modal");
+    if(modal) modal.classList.add("hidden");
+    return;
+  }
   const nav = e.target.closest(".nav-item");
   if(nav) return showView(nav.dataset.view);
 
@@ -157,7 +162,6 @@ $("addAttachmentBtn").onclick = () => {
 };
 function closeModal(){ $("modal")?.classList.add("hidden"); }
 const closeModalBtn = $("closeModalBtn");
-if(closeModalBtn) closeModalBtn.onclick = closeModal;
 $("modal")?.addEventListener("click", (e) => { if(e.target.id === "modal") closeModal(); });
 document.addEventListener("keydown", (e) => { if(e.key === "Escape") closeModal(); });
 $("adminSearch").oninput = (e) => {
@@ -332,6 +336,7 @@ function bindFieldEvents(){
 
 $("activityForm").onsubmit = async (e) => {
   e.preventDefault();
+  e.stopPropagation();
 
   const data = cleanUndefined({
     title: val("title").trim(),
@@ -364,6 +369,7 @@ $("activityForm").onsubmit = async (e) => {
     }
     alert("已儲存");
     resetForm();
+    showView("activities");
   }catch(err){
     console.error(err);
     alert("儲存失敗：" + err.message);
@@ -395,7 +401,7 @@ async function viewRegistrations(id){
     <thead><tr><th>#</th><th>姓名</th><th>系級</th><th>學號</th><th>電話</th><th>餐點</th>${custom.map(f=>`<th>${esc(f.label)}</th>`).join("")}</tr></thead>
     <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.department)}</td><td>${esc(r.studentId)}</td><td>${esc(r.phone)}</td><td>${esc(r.meal)}</td>${custom.map(f=>`<td>${esc(r.customAnswers?.[f.label]||"")}</td>`).join("")}</tr>`).join("")}</tbody>
   </table>` : '<div class="empty">目前沒有人報名</div>';
-  setHtml("modalContent", `<h2>${esc(a.title)}｜報名名單 <span class="quick-count">${rows.length} 人</span></h2>${table}`);
+  setHtml("modalContent", `<button class="modal-close" data-modal-close type="button">×</button><h2>${esc(a.title)}｜報名名單 <span class="quick-count">${rows.length} 人</span></h2>${table}`);
   $("modal").classList.remove("hidden");
 }
 
