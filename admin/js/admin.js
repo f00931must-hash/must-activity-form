@@ -32,12 +32,6 @@ function setChecked(id, value){ const el = $(id); if(el) el.checked = !!value; }
 function setText(id, value){ const el = $(id); if(el) el.textContent = value ?? ""; }
 function setHtml(id, value){ const el = $(id); if(el) el.innerHTML = value ?? ""; }
 
-$("loginBtn").onclick = async () => {
-  try { await signInWithPopup(auth, provider); }
-  catch(e){ alert("登入失敗：" + e.message); }
-};
-
-$("logoutBtn").onclick = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
   if(!user){
@@ -78,14 +72,6 @@ function isAdmin(email){
   return adminEmails.includes(email);
 }
 
-$("addAdminBtn").onclick = async () => {
-  const email = val("adminEmailInput").trim();
-  if(!email || !email.includes("@")) return alert("請輸入正確 Email");
-  if(!adminEmails.includes(email)) adminEmails.push(email);
-  await setDoc(doc(db, "settings", "admins"), { emails: adminEmails, updatedAt: serverTimestamp() }, { merge:true });
-  setVal("adminEmailInput", "");
-  renderAdmins();
-};
 
 function renderAdmins(){
   const box = $("adminEmailList");
@@ -158,21 +144,8 @@ function showView(view){
   $("view-" + view)?.classList.remove("hidden");
   setText("pageTitle", {dashboard:"儀表板",activities:"活動管理",settings:"系統設定"}[view] || "管理平台");
 }
+ resetForm(); };
 
-$("newActivityBtn").onclick = () => { showView("activities"); resetForm(); };
-$("resetBtn").onclick = resetForm;
-$("addRegisterFieldBtn").onclick = () => {
-  regFields.push({ label:"新題目", type:"text", required:false, options:[] });
-  renderRegFields();
-};
-$("addFeedbackQuestionBtn").onclick = () => {
-  fbQuestions.push("新的滿意度題目");
-  renderFbQuestions();
-};
-$("addAttachmentBtn").onclick = () => {
-  attachments.push({name:"附件", url:""});
-  renderAttachments();
-};
 function closeModal(){ $("modal")?.classList.add("hidden"); }
 $("modal")?.addEventListener("click", (e) => { if(e.target.id === "modal") closeModal(); });
 document.addEventListener("keydown", (e) => { if(e.key === "Escape") closeModal(); });
@@ -511,3 +484,54 @@ if(newActivityBtnFallbackV1146){
     resetForm();
   }, true);
 }
+
+
+// v1.1.4.7 safe button bindings
+function bindSafeClick(id, handler){
+  const el = document.getElementById(id);
+  if(el) el.addEventListener("click", handler);
+}
+
+bindSafeClick("loginBtn", async (e) => {
+  e.preventDefault();
+  try { await signInWithPopup(auth, provider); }
+  catch(err){ console.error(err); alert("登入失敗：" + err.message); }
+});
+
+bindSafeClick("logoutBtn", () => signOut(auth));
+
+bindSafeClick("newActivityBtn", (e) => {
+  e.preventDefault();
+  showView("activities");
+  resetForm();
+});
+
+bindSafeClick("resetBtn", (e) => {
+  e.preventDefault();
+  resetForm();
+});
+
+bindSafeClick("addRegisterFieldBtn", (e) => {
+  e.preventDefault();
+  regFields.push({ label:"新題目", type:"text", required:false, options:[] });
+  renderRegFields();
+});
+
+bindSafeClick("addFeedbackQuestionBtn", (e) => {
+  e.preventDefault();
+  fbQuestions.push("新的滿意度題目");
+  renderFbQuestions();
+});
+
+bindSafeClick("addAttachmentBtn", (e) => {
+  e.preventDefault();
+  attachments.push({name:"附件", url:""});
+  renderAttachments();
+});
+
+document.addEventListener("click", (e) => {
+  if(e.target.closest("[data-modal-close]") || e.target.id === "modal"){
+    const modal = document.getElementById("modal");
+    if(modal) modal.classList.add("hidden");
+  }
+});
