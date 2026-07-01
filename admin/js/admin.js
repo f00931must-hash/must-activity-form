@@ -27,51 +27,37 @@ const likertOptions = ["非常滿意","滿意","普通","不滿意","非常不�
 
 function val(id){ return $(id)?.value ?? ""; }
 function checked(id){ return !!$(id)?.checked; }
-function setVal(id, value){ const el = $(id); if(el) el.value = value ?? ""; }
-function setChecked(id, value){ const el = $(id); if(el) el.checked = !!value; }
-function setText(id, value){ const el = $(id); if(el) el.textContent = value ?? ""; }
-function setHtml(id, value){ const el = $(id); if(el) el.innerHTML = value ?? ""; }
+function setVal(id, value){ const el=$(id); if(el) el.value=value ?? ""; }
+function setChecked(id, value){ const el=$(id); if(el) el.checked=!!value; }
+function setText(id, value){ const el=$(id); if(el) el.textContent=value ?? ""; }
+function setHtml(id, value){ const el=$(id); if(el) el.innerHTML=value ?? ""; }
 
+function cleanUndefined(obj){
+  if(Array.isArray(obj)) return obj.map(cleanUndefined);
+  if(obj && typeof obj === "object"){
+    const out = {};
+    Object.entries(obj).forEach(([k,v]) => {
+      if(v !== undefined) out[k] = cleanUndefined(v);
+    });
+    return out;
+  }
+  return obj;
+}
 
-onAuthStateChanged(auth, async (user) => {
-  if(!user){
-    $("loginView").classList.remove("hidden");
-    $("appView").classList.add("hidden");
-    return;
-  }
-  currentUser = user;
-  await loadAdmins();
-  if(!isAdmin(user.email)){
-    alert("這個帳號沒有後台權限：" + user.email);
-    await signOut(auth);
-    return;
-  }
-  $("loginView").classList.add("hidden");
-  $("appView").classList.remove("hidden");
-  setText("userInfo", user.email);
-  resetForm();
-  listenActivities();
-});
+function isAdmin(email){ return adminEmails.includes(email); }
 
 async function loadAdmins(){
   const ref = doc(db, "settings", "admins");
   const snap = await getDoc(ref);
   adminEmails = snap.exists() ? (snap.data().emails || []) : [];
-
   for(const email of builtInAdmins){
     if(!adminEmails.includes(email)) adminEmails.push(email);
   }
-
   if(currentUser && builtInAdmins.includes(currentUser.email)){
-    await setDoc(ref, { emails: adminEmails, updatedAt: serverTimestamp() }, { merge:true });
+    await setDoc(ref, {emails: adminEmails, updatedAt: serverTimestamp()}, {merge:true});
   }
   renderAdmins();
 }
-
-function isAdmin(email){
-  return adminEmails.includes(email);
-}
-
 
 function renderAdmins(){
   const box = $("adminEmailList");
@@ -84,89 +70,31 @@ function renderAdmins(){
   `).join("");
 }
 
-
-function closeModalSafe(){
-  const modal = $("modal");
-  if(modal) modal.classList.add("hidden");
-}
-document.addEventListener("keydown", (e) => {
-  if(e.key === "Escape") closeModalSafe();
-});
-document.addEventListener("click", async (e) => {
-  if(e.target.closest("[data-modal-close]") || e.target.id === "modal"){
-    closeModalSafe();
-    return;
-  }
-
-  if(e.target.closest("[data-modal-close]") || e.target.id === "modal"){
-    const modal = $("modal");
-    if(modal) modal.classList.add("hidden");
-    return;
-  }
-  const nav = e.target.closest(".nav-item");
-  if(nav) return showView(nav.dataset.view);
-
-  const edit = e.target.closest("[data-edit]");
-  if(edit) return editActivity(edit.dataset.edit);
-
-  const del = e.target.closest("[data-delete]");
-  if(del) return deleteActivity(del.dataset.delete);
-
-  const copy = e.target.closest("[data-copy]");
-  if(copy) return copyLink(copy.dataset.copy);
-
-  const qr = e.target.closest("[data-qr]");
-  if(qr) return downloadQr(qr.dataset.qr, qr.dataset.name || "qr");
-
-  const viewRegs = e.target.closest("[data-view-regs]");
-  if(viewRegs) return viewRegistrations(viewRegs.dataset.viewRegs);
-
-  const regs = e.target.closest("[data-export-regs]");
-  if(regs) return exportRegistrations(regs.dataset.exportRegs);
-
-  const fbs = e.target.closest("[data-export-fbs]");
-  if(fbs) return exportFeedbacks(fbs.dataset.exportFbs);
-
-  const word = e.target.closest("[data-export-word]");
-  if(word) return exportFeedbackWord(word.dataset.exportWord);
-
-  const removeAdmin = e.target.closest("[data-remove-admin]");
-  if(removeAdmin){
-    adminEmails = adminEmails.filter(x => x !== removeAdmin.dataset.removeAdmin);
-    await setDoc(doc(db, "settings", "admins"), { emails: adminEmails, updatedAt: serverTimestamp() }, { merge:true });
-    renderAdmins();
-  }
-});
-
 function showView(view){
   document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.view === view));
   document.querySelectorAll(".view").forEach(v => v.classList.add("hidden"));
   $("view-" + view)?.classList.remove("hidden");
   setText("pageTitle", {dashboard:"儀表板",activities:"活動管理",settings:"系統設定"}[view] || "管理平台");
 }
- resetForm(); };
 
-function closeModal(){ $("modal")?.classList.add("hidden"); }
-$("modal")?.addEventListener("click", (e) => { if(e.target.id === "modal") closeModal(); });
-document.addEventListener("keydown", (e) => { if(e.key === "Escape") closeModal(); });
-$("adminSearch").oninput = (e) => {
-  adminSearchText = e.target.value.trim();
-  renderLists();
-};
+function closeModal(){
+  $("modal")?.classList.add("hidden");
+}
 
 function listenActivities(){
   if(unsubscribe) return;
-  unsubscribe = onSnapshot(query(collection(db, "activities"), orderBy("date", "desc")), (snap) => {
-    activities = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+  unsubscribe = onSnapshot(query(collection(db, "activities"), orderBy("date", "desc")), snap => {
+    activities = snap.docs.map(d => ({id:d.id, ...d.data()}));
     updateStats();
     renderLists();
-  });
+  }, err => console.error(err));
 }
 
 function updateStats(){
   setText("statActivities", activities.length);
+  setText("statRegs", activities.reduce((s,a)=>s+Number(a.registeredCount||0),0));
   setText("statFeedbacks", activities.reduce((s,a)=>s+Number(a.feedbackCount||0),0));
-  setText("statOpenActivities", activities.filter(a => a.status === "open").length);
+  setText("statOpenActivities", activities.filter(a=>a.status==="open").length);
 }
 
 function renderLists(){
@@ -208,11 +136,6 @@ function card(a){
       <button class="ghost-btn danger-btn" data-delete="${a.id}">刪除</button>
     </div>
   </article>`;
-}
-
-function formatDateTime(v){
-  if(!v) return "";
-  return String(v).replace("T"," ");
 }
 
 function resetForm(){
@@ -260,7 +183,6 @@ function editActivity(id){
   renderRegFields();
   renderFbQuestions();
 }
-
 
 function renderAttachments(){
   const html = attachments.length ? attachments.map((f,i)=>`
@@ -319,6 +241,51 @@ function bindFieldEvents(){
   document.querySelectorAll(".att-remove").forEach(el => el.onclick = () => { attachments.splice(Number(el.dataset.i),1); renderAttachments(); });
 }
 
+async function saveActivity(event){
+  event.preventDefault();
+  event.stopPropagation();
+
+  const data = cleanUndefined({
+    title: val("title").trim(),
+    date: val("date"),
+    time: val("time").trim(),
+    location: val("location").trim(),
+    description: val("description").trim(),
+    capacity: Number(val("capacity") || 0),
+    status: val("status") || "open",
+    published: checked("published"),
+    feedbackOpenAt: val("feedbackOpenAt"),
+    attachments: attachments.filter(a => (a.name || a.url)),
+    registerFields: regFields,
+    feedbackQuestions: fbQuestions.filter(Boolean),
+    feedbackMinWords: Number(val("feedbackMinWords") || 30),
+    updatedAt: serverTimestamp()
+  });
+
+  if(!data.title || !data.date){
+    alert("活動名稱和日期必填");
+    return;
+  }
+
+  try{
+    const id = val("editId");
+    if(id){
+      await updateDoc(doc(db, "activities", id), data);
+    }else{
+      data.registeredCount = 0;
+      data.feedbackCount = 0;
+      data.createdAt = serverTimestamp();
+      await addDoc(collection(db, "activities"), data);
+    }
+    alert("已儲存");
+    resetForm();
+    showView("activities");
+  }catch(err){
+    console.error(err);
+    alert("儲存失敗：" + err.message);
+  }
+}
+
 async function deleteActivity(id){
   if(!confirm("確定刪除此活動？")) return;
   await deleteDoc(doc(db, "activities", id));
@@ -334,7 +301,6 @@ function downloadQr(url, name){
   window.open(qr, "_blank");
 }
 
-
 async function viewRegistrations(id){
   const a = activities.find(x=>x.id===id);
   const snap = await getDocs(collection(db, "activities", id, "registrations"));
@@ -345,7 +311,7 @@ async function viewRegistrations(id){
     <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.department)}</td><td>${esc(r.studentId)}</td><td>${esc(r.phone)}</td><td>${esc(r.meal)}</td>${custom.map(f=>`<td>${esc(r.customAnswers?.[f.label]||"")}</td>`).join("")}</tr>`).join("")}</tbody>
   </table>` : '<div class="empty">目前沒有人報名</div>';
   setHtml("modalContent", `<button class="modal-close" data-modal-close type="button">×</button><h2>${esc(a.title)}｜報名名單 <span class="quick-count">${rows.length} 人</span></h2>${table}`);
-  $("modal").classList.remove("hidden");
+  $("modal")?.classList.remove("hidden");
 }
 
 async function exportRegistrations(id){
@@ -388,6 +354,7 @@ function downloadCsv(filename, rows){
   const csv = rows.map(r => r.map(v => `"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   downloadFile(filename, "\ufeff"+csv, "text/csv;charset=utf-8");
 }
+
 function downloadFile(filename, content, type){
   const blob = new Blob([content], {type});
   const url = URL.createObjectURL(blob);
@@ -397,141 +364,107 @@ function downloadFile(filename, content, type){
   a.click();
   URL.revokeObjectURL(url);
 }
-function cleanUndefined(obj){
-  if(Array.isArray(obj)) return obj.map(cleanUndefined);
-  if(obj && typeof obj === "object"){
-    const out = {};
-    Object.entries(obj).forEach(([k,v]) => {
-      if(v !== undefined) out[k] = cleanUndefined(v);
-    });
-    return out;
-  }
-  return obj;
-}
+
+function formatDateTime(v){ return String(v || "").replace("T"," "); }
 function round(n){ return Math.round(n*10)/10; }
 function statusText(s){ return {open:"報名中",feedback:"回饋中",closed:"已結束",draft:"草稿"}[s] || "活動"; }
 function esc(str){ return String(str || "").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
 
-const newActivityBtnBackup = $("newActivityBtn");
-if(newActivityBtnBackup){
-  newActivityBtnBackup.addEventListener("click", () => {
-    showView("activities");
-    resetForm();
-  });
-}
-
-
-// v1.1.4.6 robust save fallback
-async function saveActivityFallback(event){
-  event.preventDefault();
-  event.stopPropagation();
-
-  const get = (id) => document.getElementById(id);
-  const readVal = (id) => get(id)?.value ?? "";
-  const readChecked = (id) => !!get(id)?.checked;
-
-  const payload = cleanUndefined({
-    title: readVal("title").trim(),
-    date: readVal("date"),
-    time: readVal("time").trim(),
-    location: readVal("location").trim(),
-    description: readVal("description").trim(),
-    capacity: Number(readVal("capacity") || 0),
-    status: readVal("status") || "open",
-    published: readChecked("published"),
-    feedbackOpenAt: readVal("feedbackOpenAt"),
-    attachments: (typeof attachments !== "undefined" ? attachments : []).filter(a => (a.name || a.url)),
-    registerFields: (typeof regFields !== "undefined" ? regFields : []),
-    feedbackQuestions: (typeof fbQuestions !== "undefined" ? fbQuestions : []).filter(Boolean),
-    feedbackMinWords: Number(readVal("feedbackMinWords") || 30),
-    updatedAt: serverTimestamp()
-  });
-
-  if(!payload.title || !payload.date){
-    alert("活動名稱和日期必填");
-    return;
-  }
-
-  try{
-    const editIdValue = readVal("editId");
-    if(editIdValue){
-      await updateDoc(doc(db, "activities", editIdValue), payload);
-    }else{
-      payload.registeredCount = 0;
-      payload.feedbackCount = 0;
-      payload.createdAt = serverTimestamp();
-      await addDoc(collection(db, "activities"), payload);
-    }
-    alert("已儲存");
-    resetForm();
-    showView("activities");
-  }catch(err){
-    console.error(err);
-    alert("儲存失敗：" + err.message);
-  }
-}
-
-const activityFormFallback = document.getElementById("activityForm");
-if(activityFormFallback){
-  activityFormFallback.addEventListener("submit", saveActivityFallback, true);
-}
-
-const newActivityBtnFallbackV1146 = document.getElementById("newActivityBtn");
-if(newActivityBtnFallbackV1146){
-  newActivityBtnFallbackV1146.addEventListener("click", (e) => {
-    e.preventDefault();
-    showView("activities");
-    resetForm();
-  }, true);
-}
-
-
-// v1.1.4.7 safe button bindings
-function bindSafeClick(id, handler){
-  const el = document.getElementById(id);
+function bindClick(id, handler){
+  const el = $(id);
   if(el) el.addEventListener("click", handler);
 }
 
-bindSafeClick("loginBtn", async (e) => {
+bindClick("loginBtn", async (e) => {
   e.preventDefault();
   try { await signInWithPopup(auth, provider); }
   catch(err){ console.error(err); alert("登入失敗：" + err.message); }
 });
 
-bindSafeClick("logoutBtn", () => signOut(auth));
+bindClick("logoutBtn", () => signOut(auth));
+bindClick("newActivityBtn", (e) => { e.preventDefault(); showView("activities"); resetForm(); });
+bindClick("resetBtn", (e) => { e.preventDefault(); resetForm(); });
+bindClick("addRegisterFieldBtn", (e) => { e.preventDefault(); regFields.push({label:"新題目", type:"text", required:false, options:[]}); renderRegFields(); });
+bindClick("addFeedbackQuestionBtn", (e) => { e.preventDefault(); fbQuestions.push("新的滿意度題目"); renderFbQuestions(); });
+bindClick("addAttachmentBtn", (e) => { e.preventDefault(); attachments.push({name:"附件", url:""}); renderAttachments(); });
 
-bindSafeClick("newActivityBtn", (e) => {
-  e.preventDefault();
-  showView("activities");
-  resetForm();
+const activityForm = $("activityForm");
+if(activityForm) activityForm.addEventListener("submit", saveActivity);
+
+const adminSearch = $("adminSearch");
+if(adminSearch) adminSearch.addEventListener("input", e => { adminSearchText = e.target.value.trim(); renderLists(); });
+
+const addAdminBtn = $("addAdminBtn");
+if(addAdminBtn) addAdminBtn.addEventListener("click", async () => {
+  const email = val("adminEmailInput").trim();
+  if(!email || !email.includes("@")) return alert("請輸入正確 Email");
+  if(!adminEmails.includes(email)) adminEmails.push(email);
+  await setDoc(doc(db, "settings", "admins"), { emails: adminEmails, updatedAt: serverTimestamp() }, { merge:true });
+  setVal("adminEmailInput", "");
+  renderAdmins();
 });
 
-bindSafeClick("resetBtn", (e) => {
-  e.preventDefault();
-  resetForm();
-});
-
-bindSafeClick("addRegisterFieldBtn", (e) => {
-  e.preventDefault();
-  regFields.push({ label:"新題目", type:"text", required:false, options:[] });
-  renderRegFields();
-});
-
-bindSafeClick("addFeedbackQuestionBtn", (e) => {
-  e.preventDefault();
-  fbQuestions.push("新的滿意度題目");
-  renderFbQuestions();
-});
-
-bindSafeClick("addAttachmentBtn", (e) => {
-  e.preventDefault();
-  attachments.push({name:"附件", url:""});
-  renderAttachments();
-});
-
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
   if(e.target.closest("[data-modal-close]") || e.target.id === "modal"){
-    const modal = document.getElementById("modal");
-    if(modal) modal.classList.add("hidden");
+    closeModal();
+    return;
   }
+
+  const nav = e.target.closest(".nav-item");
+  if(nav) return showView(nav.dataset.view);
+
+  const edit = e.target.closest("[data-edit]");
+  if(edit) return editActivity(edit.dataset.edit);
+
+  const del = e.target.closest("[data-delete]");
+  if(del) return deleteActivity(del.dataset.delete);
+
+  const copy = e.target.closest("[data-copy]");
+  if(copy) return copyLink(copy.dataset.copy);
+
+  const qr = e.target.closest("[data-qr]");
+  if(qr) return downloadQr(qr.dataset.qr, qr.dataset.name || "qr");
+
+  const viewRegs = e.target.closest("[data-view-regs]");
+  if(viewRegs) return viewRegistrations(viewRegs.dataset.viewRegs);
+
+  const regs = e.target.closest("[data-export-regs]");
+  if(regs) return exportRegistrations(regs.dataset.exportRegs);
+
+  const fbs = e.target.closest("[data-export-fbs]");
+  if(fbs) return exportFeedbacks(fbs.dataset.exportFbs);
+
+  const word = e.target.closest("[data-export-word]");
+  if(word) return exportFeedbackWord(word.dataset.exportWord);
+
+  const removeAdmin = e.target.closest("[data-remove-admin]");
+  if(removeAdmin){
+    adminEmails = adminEmails.filter(x => x !== removeAdmin.dataset.removeAdmin);
+    await setDoc(doc(db, "settings", "admins"), {emails: adminEmails, updatedAt: serverTimestamp()}, {merge:true});
+    renderAdmins();
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape") closeModal();
+});
+
+onAuthStateChanged(auth, async user => {
+  if(!user){
+    $("loginView")?.classList.remove("hidden");
+    $("appView")?.classList.add("hidden");
+    return;
+  }
+  currentUser = user;
+  await loadAdmins();
+  if(!isAdmin(user.email)){
+    alert("這個帳號沒有後台權限：" + user.email);
+    await signOut(auth);
+    return;
+  }
+  $("loginView")?.classList.add("hidden");
+  $("appView")?.classList.remove("hidden");
+  setText("userInfo", user.email);
+  resetForm();
+  listenActivities();
 });

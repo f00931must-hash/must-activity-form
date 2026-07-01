@@ -1,4 +1,4 @@
-# MUST Activity System v1.1.4.7
+# MUST Activity System v1.2
 
 活動報名與回饋管理平台。
 
@@ -80,3 +80,7 @@
 ## v1.1.4.7 修正
 - 修正 onclick 綁定到 null 導致後台中斷。
 - 所有主要按鈕改為安全綁定。
+
+## v1.2 clean
+- 重建乾淨後台 admin.js，移除補丁殘留造成的 SyntaxError。
+- 修復登入、活動新增/修改、彈窗、回饋開放時間。
