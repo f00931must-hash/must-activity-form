@@ -1,4 +1,4 @@
-# MUST Activity System v1.0.4
+# MUST Activity System v1.0.5
 
 活動報名與回饋管理平台。
 
@@ -34,3 +34,7 @@
 ## v1.0.4 修正
 - 修正後台使用瀏覽器全域變數 `status` 導致無法儲存活動。
 - 修正活動資料送出前清除 undefined 欄位。
+
+## v1.0.5 修正
+- 重寫後台 admin.js，避免 DOM ID 與瀏覽器全域變數衝突。
+- 修正活動儲存失敗問題。
