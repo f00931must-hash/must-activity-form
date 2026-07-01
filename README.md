@@ -1,4 +1,4 @@
-# MUST Activity System v1.0.2
+# MUST Activity System v1.0.3
 
 活動報名與回饋管理平台。
 
@@ -25,3 +25,8 @@
 
 ## v1.0.2 修正
 - 修正 Firebase 官方 apiKey 與 appId。
+
+## v1.0.3 修正
+- 修正後台儲存活動時 status 可能 undefined 的問題。
+- 修正 resetForm 的 search 命名衝突。
+- 回饋題目改為滿意度李克特五級：非常滿意、滿意、普通、不滿意、非常不滿意。

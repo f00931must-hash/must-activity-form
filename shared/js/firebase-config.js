@@ -1,3 +1,4 @@
+// MUST Activity System Firebase 設定
 export const firebaseConfig = {
   apiKey: "AIzaSyDjrdWAzIKcrClSdH8hlcmVgjQDR0K62hg",
   authDomain: "must-activity-form.firebaseapp.com",
