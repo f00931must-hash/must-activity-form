@@ -12,6 +12,7 @@ let adminEmails = [];
 let currentUser = null;
 let regFields = [];
 let fbQuestions = [];
+let attachments = [];
 let adminSearchText = "";
 
 const defaultFb = [
@@ -112,6 +113,9 @@ document.addEventListener("click", async (e) => {
   const qr = e.target.closest("[data-qr]");
   if(qr) return downloadQr(qr.dataset.qr, qr.dataset.name || "qr");
 
+  const viewRegs = e.target.closest("[data-view-regs]");
+  if(viewRegs) return viewRegistrations(viewRegs.dataset.viewRegs);
+
   const regs = e.target.closest("[data-export-regs]");
   if(regs) return exportRegistrations(regs.dataset.exportRegs);
 
@@ -146,6 +150,11 @@ $("addFeedbackQuestionBtn").onclick = () => {
   fbQuestions.push("新的滿意度題目");
   renderFbQuestions();
 };
+$("addAttachmentBtn").onclick = () => {
+  attachments.push({name:"附件", url:""});
+  renderAttachments();
+};
+$("closeModalBtn").onclick = () => $("modal").classList.add("hidden");
 $("adminSearch").oninput = (e) => {
   adminSearchText = e.target.value.trim();
   renderLists();
@@ -163,8 +172,8 @@ function listenActivities(){
 
 function updateStats(){
   setText("statActivities", activities.length);
-  setText("statRegs", activities.reduce((s,a)=>s+Number(a.registeredCount||0),0));
   setText("statFeedbacks", activities.reduce((s,a)=>s+Number(a.feedbackCount||0),0));
+  setText("statOpenActivities", activities.filter(a => a.status === "open").length);
 }
 
 function renderLists(){
@@ -187,9 +196,10 @@ function card(a){
       <button class="ghost-btn" data-qr="${regUrl}" data-name="${esc(a.title)}_報名QR">報名QR</button>
       <button class="ghost-btn" data-copy="${fbUrl}">複製回饋連結</button>
       <button class="ghost-btn" data-qr="${fbUrl}" data-name="${esc(a.title)}_回饋QR">回饋QR</button>
-      <button class="ghost-btn" data-export-regs="${a.id}">報名CSV</button>
-      <button class="ghost-btn" data-export-fbs="${a.id}">回饋CSV</button>
-      <button class="ghost-btn" data-export-word="${a.id}">成果Word</button>
+      <button class="ghost-btn" data-view-regs="${a.id}">查看報名名單</button>
+      <button class="ghost-btn" data-export-regs="${a.id}">下載報名名單</button>
+      <button class="ghost-btn" data-export-fbs="${a.id}">下載回饋資料</button>
+      <button class="ghost-btn" data-export-word="${a.id}">下載成果Word</button>
       <button class="ghost-btn" data-edit="${a.id}">修改</button>
       <button class="ghost-btn" data-delete="${a.id}">刪除</button>
     </div>
@@ -208,9 +218,12 @@ function resetForm(){
   setVal("capacity", 0);
   setVal("status", "open");
   setChecked("published", true);
+  setVal("feedbackOpenAt", "");
   setVal("feedbackMinWords", 30);
   regFields = [];
   fbQuestions = [...defaultFb];
+  attachments = [];
+  renderAttachments();
   renderRegFields();
   renderFbQuestions();
 }
@@ -229,11 +242,28 @@ function editActivity(id){
   setVal("capacity", a.capacity || 0);
   setVal("status", a.status || "open");
   setChecked("published", a.published !== false);
+  setVal("feedbackOpenAt", a.feedbackOpenAt || "");
   setVal("feedbackMinWords", a.feedbackMinWords || 30);
   regFields = a.registerFields || [];
   fbQuestions = a.feedbackQuestions || [...defaultFb];
+  attachments = a.attachments || [];
+  renderAttachments();
   renderRegFields();
   renderFbQuestions();
+}
+
+
+function renderAttachments(){
+  const html = attachments.length ? attachments.map((f,i)=>`
+    <div class="field-item">
+      <div class="attach-row">
+        <input class="field att-name" data-i="${i}" value="${esc(f.name || "")}" placeholder="附件名稱，例如 行程表">
+        <input class="field att-url" data-i="${i}" value="${esc(f.url || "")}" placeholder="附件網址，例如 Google Drive / PDF 連結">
+        <button type="button" class="ghost-btn att-remove" data-i="${i}">移除</button>
+      </div>
+    </div>`).join("") : '<div class="empty">目前沒有附件連結</div>';
+  setHtml("attachmentsBox", html);
+  bindFieldEvents();
 }
 
 function renderRegFields(){
@@ -275,6 +305,9 @@ function bindFieldEvents(){
   document.querySelectorAll(".reg-remove").forEach(el => el.onclick = () => { regFields.splice(Number(el.dataset.i),1); renderRegFields(); });
   document.querySelectorAll(".fb-question").forEach(el => el.oninput = () => fbQuestions[Number(el.dataset.i)] = el.value);
   document.querySelectorAll(".fb-remove").forEach(el => el.onclick = () => { fbQuestions.splice(Number(el.dataset.i),1); renderFbQuestions(); });
+  document.querySelectorAll(".att-name").forEach(el => el.oninput = () => attachments[Number(el.dataset.i)].name = el.value);
+  document.querySelectorAll(".att-url").forEach(el => el.oninput = () => attachments[Number(el.dataset.i)].url = el.value);
+  document.querySelectorAll(".att-remove").forEach(el => el.onclick = () => { attachments.splice(Number(el.dataset.i),1); renderAttachments(); });
 }
 
 $("activityForm").onsubmit = async (e) => {
@@ -289,6 +322,8 @@ $("activityForm").onsubmit = async (e) => {
     capacity: Number(val("capacity") || 0),
     status: val("status") || "open",
     published: checked("published"),
+    feedbackOpenAt: val("feedbackOpenAt"),
+    attachments: attachments.filter(a => (a.name || a.url)),
     registerFields: regFields,
     feedbackQuestions: fbQuestions.filter(Boolean),
     feedbackMinWords: Number(val("feedbackMinWords") || 30),
@@ -328,6 +363,20 @@ async function copyLink(url){
 function downloadQr(url, name){
   const qr = "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + encodeURIComponent(url);
   window.open(qr, "_blank");
+}
+
+
+async function viewRegistrations(id){
+  const a = activities.find(x=>x.id===id);
+  const snap = await getDocs(collection(db, "activities", id, "registrations"));
+  const rows = snap.docs.map(d=>d.data());
+  const custom = a.registerFields || [];
+  const table = rows.length ? `<table class="data-table">
+    <thead><tr><th>#</th><th>姓名</th><th>系級</th><th>學號</th><th>電話</th><th>餐點</th>${custom.map(f=>`<th>${esc(f.label)}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.department)}</td><td>${esc(r.studentId)}</td><td>${esc(r.phone)}</td><td>${esc(r.meal)}</td>${custom.map(f=>`<td>${esc(r.customAnswers?.[f.label]||"")}</td>`).join("")}</tr>`).join("")}</tbody>
+  </table>` : '<div class="empty">目前沒有人報名</div>';
+  setHtml("modalContent", `<h2>${esc(a.title)}｜報名名單 <span class="quick-count">${rows.length} 人</span></h2>${table}<p><button class="primary-btn" data-export-regs="${id}">下載報名名單</button></p>`);
+  $("modal").classList.remove("hidden");
 }
 
 async function exportRegistrations(id){
