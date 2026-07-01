@@ -395,7 +395,7 @@ async function viewRegistrations(id){
     <thead><tr><th>#</th><th>姓名</th><th>系級</th><th>學號</th><th>電話</th><th>餐點</th>${custom.map(f=>`<th>${esc(f.label)}</th>`).join("")}</tr></thead>
     <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.department)}</td><td>${esc(r.studentId)}</td><td>${esc(r.phone)}</td><td>${esc(r.meal)}</td>${custom.map(f=>`<td>${esc(r.customAnswers?.[f.label]||"")}</td>`).join("")}</tr>`).join("")}</tbody>
   </table>` : '<div class="empty">目前沒有人報名</div>';
-  setHtml("modalContent", `<h2>${esc(a.title)}｜報名名單 <span class="quick-count">${rows.length} 人</span></h2>${table}<p><button class="primary-btn" data-export-regs="${id}">下載報名名單</button></p>`);
+  setHtml("modalContent", `<h2>${esc(a.title)}｜報名名單 <span class="quick-count">${rows.length} 人</span></h2>${table}`);
   $("modal").classList.remove("hidden");
 }
 
