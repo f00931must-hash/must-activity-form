@@ -1,4 +1,4 @@
-# MUST Activity System v1.4.2
+# MUST Activity System v1.4.3
 
 活動報名與回饋管理平台。
 
@@ -118,3 +118,7 @@
 - 頂端學年度/學期/學校/單位改同一行，16pt。
 - 回饋表標題改 24pt。
 - 「項目」欄位使用分散對齊。
+
+## v1.4.3
+- 成果 Word 改用 Word 專用頁面設定：A4、上下左右 36pt（約 1.27cm）。
+- 移除 body 預設邊距，避免 Word 忽略一般 @page margin。

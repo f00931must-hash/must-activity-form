@@ -434,7 +434,7 @@ async function exportFeedbackWord(id){
   const total = rows.length || 1;
   const week = weekdayText(a.date);
   const dateLine = `實施日期：${esc(a.date || "")}${week ? `（${week}）` : ""} ${esc(a.time || "")}`;
-  const headerLine = `${esc(a.academicYear || "")} 學年度第 ${esc(a.semester || "")} 學期明新科技大學　學務處健康與諮商中心資源教室`;
+  const headerLine = `${esc(a.academicYear || "")}學年度第 ${esc(a.semester || "")} 學期明新科技大學　學務處健康與諮商中心資源教室`;
   const tableRows = qs.map((q,i)=>{
     const cells = likertOptions.map(o=>{
       const count = rows.filter(r=>r.ratings?.[q]===o).length;
@@ -449,18 +449,20 @@ async function exportFeedbackWord(id){
   const comments = rows.map((r,i)=>r.comment ? `<p>(${i+1}) ${esc(r.comment||"")}</p>` : "").join("");
   const html = `<!doctype html><html><head><meta charset="utf-8">
   <style>
-    @page{size:A4;margin:1.27cm}
-    body{font-family:'DFKai-SB','標楷體','BiauKai',serif;font-size:12pt;line-height:1.45}
-    h1{font-size:24pt;text-align:center;margin:8px 0 10px;font-family:'DFKai-SB','標楷體','BiauKai',serif}
-    h2{font-size:12pt;margin:12px 0 6px;font-family:'DFKai-SB','標楷體','BiauKai',serif}
-    .top{font-size:16pt;text-align:center;font-weight:bold;line-height:1.4;white-space:nowrap}
-    .meta{font-size:12pt;margin:5px 0}
+    @page WordSection1{size:595.3pt 841.9pt;margin:36pt 36pt 36pt 36pt;mso-header-margin:0pt;mso-footer-margin:0pt}
+    div.WordSection1{page:WordSection1}
+    body{font-family:'DFKai-SB','標楷體','BiauKai',serif;font-size:12pt;line-height:1.35;margin:0}
+    h1{font-size:24pt;text-align:center;margin:6pt 0 8pt;font-family:'DFKai-SB','標楷體','BiauKai',serif}
+    h2{font-size:12pt;margin:10pt 0 5pt;font-family:'DFKai-SB','標楷體','BiauKai',serif}
+    .top{font-size:16pt;text-align:center;font-weight:bold;line-height:1.2;white-space:nowrap}
+    .meta{font-size:12pt;margin:4pt 0}
     table{border-collapse:collapse;width:100%;font-size:12pt}
-    td,th{border:1px solid #333;padding:5px;vertical-align:middle;font-size:12pt}
+    td,th{border:1px solid #333;padding:4pt;vertical-align:middle;font-size:12pt}
     th{font-weight:bold;text-align:center}
     .item{text-align:justify;text-justify:inter-ideograph;width:48%}
     .item-head{text-align:justify;text-align-last:justify;text-justify:inter-ideograph}
-  </style></head><body>
+    p{margin:5pt 0}
+  </style></head><body><div class="WordSection1">
   <div class="top">${headerLine}</div>
   <h1>「${esc(a.title)}」回饋表</h1>
   <p class="meta">${dateLine}</p>
@@ -470,7 +472,7 @@ async function exportFeedbackWord(id){
   <table><tr><th class="item-head">項　目</th>${likertOptions.map(o=>`<th>${o}</th>`).join("")}</tr>${tableRows}</table>
   ${textBlocks}
   <h2>${qs.length + textQs.length + 1}. 本次活動的心得及對你最大的幫助是什麼？</h2>${comments || "<p>無填答資料</p>"}
-  </body></html>`;
+  </div></body></html>`;
   downloadFile(a.title+"_活動回饋表.doc", html, "application/msword");
 }
 
