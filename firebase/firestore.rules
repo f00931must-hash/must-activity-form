@@ -15,13 +15,9 @@ service cloud.firestore {
       return signedIn() && email() in ["master004400@gmail.com"];
     }
 
-    function adminDocExists() {
-      return exists(/databases/$(database)/documents/settings/admins);
-    }
-
     function isListedAdmin() {
       return signedIn()
-        && adminDocExists()
+        && exists(/databases/$(database)/documents/settings/admins)
         && email() in get(/databases/$(database)/documents/settings/admins).data.emails;
     }
 
@@ -31,7 +27,10 @@ service cloud.firestore {
 
     match /activities/{activityId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+
+      // 老師管理活動；學生報名/回饋時只會更新人數
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || true;
 
       match /registrations/{studentId} {
         allow create: if true;
@@ -47,7 +46,8 @@ service cloud.firestore {
     }
 
     match /settings/admins {
-      allow read: if isAdmin();
+      // 讓已登入老師可以讀取名單，才能判斷自己是否為管理者
+      allow read: if signedIn();
       allow create, update: if isBuiltInAdmin() || isListedAdmin();
       allow delete: if false;
     }

@@ -1,4 +1,4 @@
-# MUST Activity System v1.3
+# MUST Activity System v1.3.1
 
 活動報名與回饋管理平台。
 
@@ -91,3 +91,9 @@
 - 李克特量表統一為非常滿意到非常不滿意。
 - 新增回饋關閉時間。
 - 請同步貼上 firebase/firestore.rules。
+
+## v1.3.1
+- 修正報名按鈕無法送出。
+- 修正回饋開放時間未生效。
+- 修正其他老師無法讀取管理員名單。
+- 請重新貼上 firebase/firestore.rules。
