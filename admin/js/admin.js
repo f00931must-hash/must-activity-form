@@ -151,6 +151,7 @@ function resetForm(){
   setVal("status", "open");
   setChecked("published", true);
   setVal("feedbackOpenAt", "");
+  setVal("feedbackCloseAt", "");
   setVal("feedbackMinWords", 30);
   regFields = [];
   fbQuestions = [...defaultFb];
@@ -175,6 +176,7 @@ function editActivity(id){
   setVal("status", a.status || "open");
   setChecked("published", a.published !== false);
   setVal("feedbackOpenAt", a.feedbackOpenAt || "");
+  setVal("feedbackCloseAt", a.feedbackCloseAt || "");
   setVal("feedbackMinWords", a.feedbackMinWords || 30);
   regFields = a.registerFields || [];
   fbQuestions = a.feedbackQuestions || [...defaultFb];
@@ -255,6 +257,7 @@ async function saveActivity(event){
     status: val("status") || "open",
     published: checked("published"),
     feedbackOpenAt: val("feedbackOpenAt"),
+    feedbackCloseAt: val("feedbackCloseAt"),
     attachments: attachments.filter(a => (a.name || a.url)),
     registerFields: regFields,
     feedbackQuestions: fbQuestions.filter(Boolean),

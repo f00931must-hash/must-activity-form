@@ -1,4 +1,4 @@
-# MUST Activity System v1.2
+# MUST Activity System v1.3
 
 活動報名與回饋管理平台。
 
@@ -84,3 +84,10 @@
 ## v1.2 clean
 - 重建乾淨後台 admin.js，移除補丁殘留造成的 SyntaxError。
 - 修復登入、活動新增/修改、彈窗、回饋開放時間。
+
+## v1.3
+- 回饋需有報名紀錄才可填寫。
+- 用學號避免重複報名與重複回饋。
+- 李克特量表統一為非常滿意到非常不滿意。
+- 新增回饋關閉時間。
+- 請同步貼上 firebase/firestore.rules。
